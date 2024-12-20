@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taxi Fare Prediction</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input[type="datetime-local"],
+        input[type="number"],
+        input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        input[type="submit"] {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 18px;
+            transition: background-color 0.3s;
+        }
+        input[type="submit"]:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #e9f7ef;
+            display: none; /* Ẩn kết quả ban đầu */
+            text-align: center; /* Căn giữa nội dung */
+        }
+        .loading {
+            display: none; /* Ẩn ảnh động ban đầu */
+            text-align: center;
+        }
+        .loading img {
+            width: 150px; /* Thay đổi kích thước hình ảnh */
+        }
+        /* Thêm kiểu cho các thông báo lỗi */
+        .error {
+            color: red;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Taxi Fare Prediction</h1>
+    <div class="container">
+        <form id="fare-form" action="/predict" method="post">
+            <label for="pickup_datetime">Pickup Date and Time:</label>
+            <input type="datetime-local" id="pickup_datetime" name="pickup_datetime" required>
+
+            <label for="dropoff_datetime">Dropoff Date and Time:</label>
+            <input type="datetime-local" id="dropoff_datetime" name="dropoff_datetime" required>
+
+            <label for="passenger_count">Passenger Count:</label>
+            <input type="number" id="passenger_count" name="passenger_count" min="1" max="6" required>
+
+            <label for="trip_distance">Trip Distance (miles):</label>
+            <input type="number" id="trip_distance" name="trip_distance" step="0.01" required>
+
+            <label for="pickup_longitude">Pickup Longitude:</label>
+            <input type="text" id="pickup_longitude" name="pickup_longitude" required>
+
+            <label for="pickup_latitude">Pickup Latitude:</label>
+            <input type="text" id="pickup_latitude" name="pickup_latitude" required>
+
+            <label for="dropoff_longitude">Dropoff Longitude:</label>
+            <input type="text" id="dropoff_longitude" name="dropoff_longitude" required>
+
+            <label for="dropoff_latitude">Dropoff Latitude:</label>
+            <input type="text" id="dropoff_latitude" name="dropoff_latitude" required>
+
+            <input type="submit" value="Predict Fare">
+        </form>
+
+        <div class="loading" id="loading">
+            <img src="giphy.webp" alt="Loading...">
+            <p>Predicting fare... Please wait.</p>
+        </div>
+
+        <div class="result" id="result">
+            <h2>Predicted Fare: <span id="predicted_fare"></span></h2>
+        </div>
+
+        <div class="error" id="error-message"></div>
+    </div>
+
+    <script>
+        document.getElementById('fare-form').onsubmit = async function(event) {
+            event.preventDefault(); // Ngăn chặn hành vi mặc định của biểu mẫu
+
+            // Hiển thị ảnh động trong quá trình dự đoán
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none'; // Ẩn kết quả trước khi có dự đoán
+            document.getElementById('error-message').innerText = ''; // Xóa thông báo lỗi
+
+            const formData = new FormData(this);
+            const response = await fetch('http://localhost:5000/predict', { // Địa chỉ API Flask
+                method: 'POST',
+                body: formData,
+            });
+
+            // Ẩn ảnh động sau khi có phản hồi từ server
+            document.getElementById('loading').style.display = 'none';
+
+            if (response.ok) {
+                const data = await response.json(); // Nhận dữ liệu JSON từ phản hồi
+                document.getElementById('predicted_fare').innerText = `$${data.predicted_fare.toFixed(2)}`; // Hiển thị giá vé
+                document.getElementById('result').style.display = 'block'; // Hiển thị kết quả
+            } else {
+                const errorData = await response.json(); // Nhận dữ liệu lỗi từ phản hồi
+                document.getElementById('error-message').innerText = errorData.error || 'Error predicting fare. Please try again.';
+            }
+        };
+    </script>
+
+</body>
+</html>
